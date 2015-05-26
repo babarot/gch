@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/daviddengcn/go-colortext"
 	"os"
-	"strings"
+	"path/filepath"
 )
 
 type Color int
@@ -16,7 +16,6 @@ const (
 )
 
 var (
-	gopath = os.Getenv("GOPATH")
 	repos  = []string{}
 	args   = []string{"git", "status", "-s"}
 	stdout = os.Stdout
@@ -26,17 +25,17 @@ var (
 )
 
 func main() {
-	listRepoInGopath()
-
-	for _, path := range repos {
-		blank, err := checkIfCmdReturnBlank(args, path)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		if !blank {
-			printColor(color, strings.Replace(path, gopath, "$GOPATH", 1))
-			if err := run(args, Blue, path); err != nil {
+	for _, gp := range filepath.SplitList(os.Getenv("GOPATH")) {
+		for repo := range findRepoInGopath(gp) {
+			blank, err := checkIfCmdReturnBlank(args, repo)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			if !blank {
+				printColor(color, "$GOPATH"+repo[len(gp):])
+				if err := run(args, Blue, repo); err != nil {
+				}
 			}
 		}
 	}
