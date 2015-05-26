@@ -5,6 +5,7 @@ import (
 	"github.com/daviddengcn/go-colortext"
 	"os"
 	"path/filepath"
+	//"sync"
 )
 
 type Color int
@@ -22,10 +23,12 @@ var (
 	stderr = os.Stderr
 	stdin  = os.Stdin
 	color  = Blue
+	//wg     sync.WaitGroup
 )
 
 func main() {
 	for _, gp := range filepath.SplitList(os.Getenv("GOPATH")) {
+		//wg.Add(1)
 		for repo := range findRepoInGopath(gp) {
 			blank, err := checkIfCmdReturnBlank(args, repo)
 			if err != nil {
@@ -39,6 +42,7 @@ func main() {
 			}
 		}
 	}
+	//wg.Wait()
 }
 
 func printColor(c Color, text string) {

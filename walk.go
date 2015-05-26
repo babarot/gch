@@ -7,6 +7,7 @@ import (
 )
 
 func findRepoInGopath(gp string) chan string {
+	//defer wg.Done()
 	repos := make(chan string)
 	go func() {
 		cwd := filepath.Join(gp, "src")
@@ -28,6 +29,7 @@ func findRepoInGopath(gp string) chan string {
 			repos <- path
 			return filepath.SkipDir
 		})
+		close(repos)
 	}()
 	return repos
 }
