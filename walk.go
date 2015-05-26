@@ -6,11 +6,10 @@ import (
 	"strings"
 )
 
-func listRepoInGopath() {
-	var quit chan bool
-	quit = make(chan bool)
+func findRepoInGopath(gp string) chan string {
+	repos := make(chan string)
 	go func() {
-		cwd := filepath.Join(gopath, "src")
+		cwd := filepath.Join(gp, "src")
 		filepath.Walk(cwd, func(path string, info os.FileInfo, err error) error {
 			if info == nil {
 				return err
@@ -26,12 +25,9 @@ func listRepoInGopath() {
 			if _, err := os.Stat(isgit); err != nil {
 				return nil
 			}
-			repos = append(repos, path)
-			return nil
+			repos <- path
+			return filepath.SkipDir
 		})
-		quit <- true
 	}()
-	if quit != nil {
-		<-quit
-	}
+	return repos
 }
