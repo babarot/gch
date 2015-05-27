@@ -39,6 +39,10 @@ func run(args []string, c Color, path string) error {
 }
 
 func checkIfCmdReturnBlank(args []string, path string) (bool, error) {
+	if !has("git") {
+		return false, fmt.Errorf("git: command not found")
+	}
+
 	if len(args) == 0 {
 		return false, fmt.Errorf("%s: invalid arguments", args)
 	}
@@ -50,4 +54,9 @@ func checkIfCmdReturnBlank(args []string, path string) (bool, error) {
 		return false, fmt.Errorf("%s: returns failed", args)
 	}
 	return len(out) == 0, nil
+}
+
+func has(cmd string) bool {
+	_, err := exec.LookPath(cmd)
+	return err == nil
 }
