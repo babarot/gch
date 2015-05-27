@@ -7,6 +7,20 @@ import (
 	"os/exec"
 )
 
+type Color int
+
+const (
+	None Color = Color(ct.None)
+	Red  Color = Color(ct.Red)
+	Blue Color = Color(ct.Blue)
+)
+
+func printColor(c Color, text string) {
+	ct.ChangeColor(ct.Color(c), true, ct.None, false)
+	fmt.Println(text)
+	ct.ResetColor()
+}
+
 func run(args []string, c Color, path string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%s: invalid arguments", args)
