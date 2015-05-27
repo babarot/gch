@@ -56,6 +56,7 @@ For more information, see `man git-diff-files`.
 or
 
 	$ ghq get b4b4r07/gch
+	$ go install github.com/b4b4r07/gch
 
 ## License
 
