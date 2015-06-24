@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 )
@@ -36,15 +37,28 @@ func (cli *CLI) Run(args []string) int {
 	cpu := runtime.NumCPU()
 	runtime.GOMAXPROCS(cpu)
 
-	for _, gp := range filepath.SplitList(os.Getenv("GOPATH")) {
-		for repo := range findRepoInGopath(gp) {
+	goPath := filepath.Join(os.Getenv("GOPATH"), "src")
+	target := []chan string{
+		findRepoInPath(goPath),
+	}
+
+	// Add 'ghq root' into target if exist
+	out, err := exec.Command("ghq", "root").Output()
+	if err == nil {
+		ghqPath := string(out)[:len(out)-1]
+		target = append(target, findRepoInPath(ghqPath))
+	}
+
+	for _, channel := range target {
+		for repo := range channel {
 			blank, err := checkIfCmdReturnBlank(git, repo)
+
 			if err != nil {
 				fmt.Fprintf(cli.errStream, ColoredError(err.Error()))
 				return ExitCodeNotBlank
 			}
 			if !blank {
-				printColor(color, "$GOPATH"+repo[len(gp):])
+				printColor(color, repo)
 				if err := run(git, color, repo); err != nil {
 					fmt.Fprintf(cli.errStream, ColoredError(err.Error()))
 					return ExitCodeRunError

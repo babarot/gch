@@ -6,11 +6,10 @@ import (
 	"strings"
 )
 
-func findRepoInGopath(gp string) chan string {
+func findRepoInPath(target string) chan string {
 	repos := make(chan string)
 	go func() {
-		cwd := filepath.Join(gp, "src")
-		filepath.Walk(cwd, func(path string, info os.FileInfo, err error) error {
+		filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
 			if info == nil {
 				return err
 			}
