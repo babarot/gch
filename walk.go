@@ -17,7 +17,7 @@ func findRepoInGopath(gp string) chan string {
 			if !info.IsDir() {
 				return err
 			}
-			if strings.HasPrefix(info.Name(), ".") {
+			if strings.HasPrefix(info.Name(), ".") && target != path {
 				return filepath.SkipDir
 			}
 			path = filepath.ToSlash(path)
