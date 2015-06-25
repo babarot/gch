@@ -33,8 +33,12 @@ var (
 func (c *CLI) Run(args []string) int {
 	var list bool
 	flags := flag.NewFlagSet("gch", flag.ContinueOnError)
-	flags.BoolVar(&list, "list", false, "Only list $GOPATH paths")
-	flags.BoolVar(&list, "l", false, "Only list $GOPATH paths")
+	flags.SetOutput(c.errStream)
+	flags.Usage = func() {
+		fmt.Fprint(c.errStream, helpText)
+	}
+	flags.BoolVar(&list, "list", false, "")
+	flags.BoolVar(&list, "l", false, "")
 
 	if err := flags.Parse(args); err != nil {
 		return ExitCodeErrorParseFlag
@@ -66,3 +70,11 @@ func (c *CLI) Run(args []string) int {
 
 	return ExitCodeOK
 }
+
+var helpText = `Usage: gch [options]
+  gch is a tool to run "git status" in every $GOPATHs recursively.
+
+Options:
+--list, -l    View only directory path in $GOPATHs
+              without running git status.
+`
