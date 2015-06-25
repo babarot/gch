@@ -37,9 +37,12 @@ func (cli *CLI) Run(args []string) int {
 	cpu := runtime.NumCPU()
 	runtime.GOMAXPROCS(cpu)
 
-	goPath := filepath.Join(os.Getenv("GOPATH"), "src")
-	target := []chan string{
-		findRepoInPath(goPath),
+	target := []chan string{}
+
+	// Add $GOPATH into target if exist
+	for _, line := range filepath.SplitList(os.Getenv("GOPATH")) {
+		goPath := filepath.Join(line, "src")
+		target = append(target, findRepoInPath(goPath))
 	}
 
 	// Add 'ghq root' into target if exist
