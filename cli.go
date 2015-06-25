@@ -12,37 +12,32 @@ import (
 const (
 	ExitCodeOK    int = 0
 	ExitCodeError int = 1 + iota
-	ExitCodeNotBlank
-	ExitCodeRunError
-	ExitCodeParseFlagError
+	ExitCodeErrorBlank
+	ExitCodeErrorRunCommand
+	ExitCodeErrorParseFlag
 )
 
 type CLI struct {
 	outStream, errStream io.Writer
 }
 
-type Config struct {
-	Repos []string
-}
-
 var (
-	repos  = []string{}
-	git    = []string{"git", "status", "--short"}
-	stdout = os.Stdout
-	stderr = os.Stderr
-	stdin  = os.Stdin
-	color  = Blue
+	command = []string{"git", "status", "--short"}
+	stdout  = os.Stdout
+	stderr  = os.Stderr
+	stdin   = os.Stdin
+	color   = Blue
+	failed  = Red
 )
 
-func (cli *CLI) Run(args []string) int {
+func (c *CLI) Run(args []string) int {
 	var list bool
 	flags := flag.NewFlagSet("gch", flag.ContinueOnError)
-	flags.SetOutput(cli.errStream)
 	flags.BoolVar(&list, "list", false, "Only list $GOPATH paths")
 	flags.BoolVar(&list, "l", false, "Only list $GOPATH paths")
 
 	if err := flags.Parse(args); err != nil {
-		return ExitCodeParseFlagError
+		return ExitCodeErrorParseFlag
 	}
 
 	cpu := runtime.NumCPU()
@@ -50,20 +45,19 @@ func (cli *CLI) Run(args []string) int {
 
 	for _, gp := range filepath.SplitList(os.Getenv("GOPATH")) {
 		for repo := range findRepoInGopath(gp) {
-			blank, err := checkIfCmdReturnBlank(git, repo)
+			blank, err := checkIfCmdReturnBlank(command, repo)
 			if err != nil {
-				fmt.Fprintf(cli.errStream, ColoredError(err.Error()))
-				return ExitCodeNotBlank
+				printColor(c.outStream, failed, err.Error())
+				return ExitCodeErrorBlank
 			}
 			if !blank {
 				if list {
-					fmt.Fprintln(cli.outStream, repo)
-
+					fmt.Fprintln(c.outStream, repo)
 				} else {
-					printColor(color, "$GOPATH"+repo[len(gp):])
-					if err := run(git, color, repo); err != nil {
-						fmt.Fprintf(cli.errStream, ColoredError(err.Error()))
-						return ExitCodeRunError
+					printColor(c.outStream, color, "$GOPATH"+repo[len(gp):])
+					if err := runCommand(command, color, repo); err != nil {
+						printColor(c.outStream, failed, err.Error())
+						return ExitCodeErrorRunCommand
 					}
 				}
 			}

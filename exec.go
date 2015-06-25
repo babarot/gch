@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/daviddengcn/go-colortext"
+	"io"
 	"os"
 	"os/exec"
 )
@@ -15,13 +16,13 @@ const (
 	Blue Color = Color(ct.Blue)
 )
 
-func printColor(c Color, text string) {
+func printColor(stream io.Writer, c Color, text string) {
 	ct.ChangeColor(ct.Color(c), true, ct.None, false)
-	fmt.Println(text)
+	fmt.Fprintln(stream, text)
 	ct.ResetColor()
 }
 
-func run(args []string, c Color, path string) error {
+func runCommand(args []string, c Color, path string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%s: invalid arguments", args)
 	}
