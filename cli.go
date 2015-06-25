@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -13,6 +14,7 @@ const (
 	ExitCodeError int = 1 + iota
 	ExitCodeNotBlank
 	ExitCodeRunError
+	ExitCodeParseFlagError
 )
 
 type CLI struct {
@@ -33,6 +35,16 @@ var (
 )
 
 func (cli *CLI) Run(args []string) int {
+	var list bool
+	flags := flag.NewFlagSet("gch", flag.ContinueOnError)
+	flags.SetOutput(cli.errStream)
+	flags.BoolVar(&list, "list", false, "Only list $GOPATH paths")
+	flags.BoolVar(&list, "l", false, "Only list $GOPATH paths")
+
+	if err := flags.Parse(args); err != nil {
+		return ExitCodeParseFlagError
+	}
+
 	cpu := runtime.NumCPU()
 	runtime.GOMAXPROCS(cpu)
 
@@ -44,10 +56,15 @@ func (cli *CLI) Run(args []string) int {
 				return ExitCodeNotBlank
 			}
 			if !blank {
-				printColor(color, "$GOPATH"+repo[len(gp):])
-				if err := run(git, color, repo); err != nil {
-					fmt.Fprintf(cli.errStream, ColoredError(err.Error()))
-					return ExitCodeRunError
+				if list {
+					fmt.Fprintln(cli.outStream, repo)
+
+				} else {
+					printColor(color, "$GOPATH"+repo[len(gp):])
+					if err := run(git, color, repo); err != nil {
+						fmt.Fprintf(cli.errStream, ColoredError(err.Error()))
+						return ExitCodeRunError
+					}
 				}
 			}
 		}
