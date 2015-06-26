@@ -16,12 +16,14 @@ List the changes that are applied to the repository in the `$GOPATH/src` directo
 
 ## Requirements
 
-- Go
+- Go 1.3+
 - git
 - (ghq)
 - (peco)
 
 ## Usage
+
+List modified project in all $GOPATHs.
 
 ```console
 $ gch
@@ -33,6 +35,17 @@ $GOPATH/src/github.com/b4b4r07/gomi
 $GOPATH/src/github.com/b4b4r07/xtime
  M README.md
 ```
+
+View paths only.
+
+```console
+$ gch -l
+/home/b4b4r07/src/github.com/b4b4r07/cdinterface
+/home/b4b4r07/src/github.com/b4b4r07/gomi
+/home/b4b4r07/.go/src/github.com/b4b4r07/xtime
+```
+
+For more information, see `gch --help`.
 
 | Simbol | Meaning |
 |---|---|
@@ -51,12 +64,12 @@ For more information, see `man git-diff-files`.
 
 ## Installation
 
-	$ go get -u github.com/b4b4r07/gch
+	$ go get github.com/b4b4r07/gch
 
 or
 
 	$ ghq get b4b4r07/gch
-	$ go install github.com/b4b4r07/gch
+	$ go install $GOPATH/src/github.com/b4b4r07/gch
 
 ## License
 
