@@ -24,6 +24,11 @@ type Config struct {
 	Repos []string
 }
 
+type Target struct {
+	Path string
+	Channel chan string
+}
+
 var (
 	repos  = []string{}
 	git    = []string{"git", "status", "--short"}
@@ -37,23 +42,42 @@ func (cli *CLI) Run(args []string) int {
 	cpu := runtime.NumCPU()
 	runtime.GOMAXPROCS(cpu)
 
-	target := []chan string{}
+	targets := []Target{}
 
 	// Add $GOPATH into target if exist
 	for _, line := range filepath.SplitList(os.Getenv("GOPATH")) {
 		goPath := filepath.Join(line, "src")
-		target = append(target, findRepoInPath(goPath))
+		existFlag := false
+		for _, t := range targets {
+			if t.Path == goPath {
+				existFlag = true
+			}
+		}
+		if existFlag {
+			break
+		}
+		target := Target{goPath, findRepoInPath(goPath)}
+		targets = append(targets, target)
 	}
 
 	// Add 'ghq root' into target if exist
 	out, err := exec.Command("ghq", "root").Output()
 	if err == nil {
 		ghqPath := string(out)[:len(out)-1]
-		target = append(target, findRepoInPath(ghqPath))
+		existFlag := false
+		for _, t := range targets {
+			if t.Path == ghqPath {
+				existFlag = true
+			}
+		}
+		if !existFlag {
+			target := Target{ghqPath, findRepoInPath(ghqPath)}
+			targets = append(targets, target)
+		}
 	}
 
-	for _, channel := range target {
-		for repo := range channel {
+	for _, target := range targets {
+		for repo := range target.Channel {
 			blank, err := checkIfCmdReturnBlank(git, repo)
 
 			if err != nil {
