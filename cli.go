@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 )
@@ -19,6 +20,15 @@ const (
 
 type CLI struct {
 	outStream, errStream io.Writer
+}
+
+type Config struct {
+	Repos []string
+}
+
+type Target struct {
+	Path    string
+	Channel chan string
 }
 
 var (
@@ -47,22 +57,56 @@ func (c *CLI) Run(args []string) int {
 	cpu := runtime.NumCPU()
 	runtime.GOMAXPROCS(cpu)
 
-	for _, gp := range filepath.SplitList(os.Getenv("GOPATH")) {
-		for repo := range findRepoInGopath(gp) {
+	targets := []Target{}
+
+	// Add $GOPATH into target if exist
+	for _, line := range filepath.SplitList(os.Getenv("GOPATH")) {
+		goPath := filepath.Join(line, "src")
+		existFlag := false
+		for _, t := range targets {
+			if t.Path == goPath {
+				existFlag = true
+			}
+		}
+		if existFlag {
+			break
+		}
+		target := Target{goPath, findRepoInPath(goPath)}
+		targets = append(targets, target)
+	}
+
+	// Add 'ghq root' into target if exist
+	out, err := exec.Command("ghq", "root").Output()
+	if err == nil {
+		ghqPath := string(out)[:len(out)-1]
+		existFlag := false
+		for _, t := range targets {
+			if t.Path == ghqPath {
+				existFlag = true
+			}
+		}
+		if !existFlag {
+			target := Target{ghqPath, findRepoInPath(ghqPath)}
+			targets = append(targets, target)
+		}
+	}
+
+	for _, target := range targets {
+		for repo := range target.Channel {
 			blank, err := checkIfCmdReturnBlank(command, repo)
+
 			if err != nil {
 				printColor(c.outStream, failed, err.Error())
 				return ExitCodeErrorBlank
 			}
 			if !blank {
+				printColor(c.outStream, color, repo)
 				if list {
-					fmt.Fprintln(c.outStream, repo)
-				} else {
-					printColor(c.outStream, color, "$GOPATH"+repo[len(gp):])
-					if err := runCommand(command, color, repo); err != nil {
-						printColor(c.outStream, failed, err.Error())
-						return ExitCodeErrorRunCommand
-					}
+					continue
+				}
+				if err := runCommand(command, color, repo); err != nil {
+					printColor(c.errStream, failed, err.Error())
+					return ExitCodeErrorRunCommand
 				}
 			}
 		}
