@@ -1,11 +1,16 @@
 package main
 
-import "os"
+import (
+	"os"
+)
+
+const Name = "gch"
+const Version = "0.1.1"
 
 func main() {
 	cli := &CLI{
 		outStream: os.Stdout,
 		errStream: os.Stderr,
 	}
-	os.Exit(cli.Run(os.Args[1:]))
+	os.Exit(cli.Run(os.Args))
 }

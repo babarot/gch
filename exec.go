@@ -23,6 +23,12 @@ func printColor(stream io.Writer, c Color, text string) {
 }
 
 func runCommand(args []string, c Color, path string) error {
+	var (
+		stdout = os.Stdout
+		stderr = os.Stderr
+		stdin  = os.Stdin
+	)
+
 	if len(args) == 0 {
 		return fmt.Errorf("%s: invalid arguments", args)
 	}
