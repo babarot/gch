@@ -10,20 +10,23 @@ import (
 	"runtime"
 )
 
+// Exit codes are int values that represent an exit code for a particular error.
+// Sub-systems may check this unique error to determine the cause of an error
+// without parsing the output or help text.
 const (
 	ExitCodeOK    int = 0
 	ExitCodeError int = 1 + iota
 	ExitCodeErrorBlank
 	ExitCodeErrorRunCommand
 	ExitCodeErrorParseFlag
+	ExitCodeErrorGopathNotSet
 )
 
+// CLI is the command line object
 type CLI struct {
+	// outStream and errStream are the standard out and standard error streams to
+	// write messages from the CLI.
 	outStream, errStream io.Writer
-}
-
-type Config struct {
-	Repos []string
 }
 
 type Target struct {
@@ -31,33 +34,48 @@ type Target struct {
 	Channel chan string
 }
 
-var (
-	command = []string{"git", "status", "--short"}
-	stdout  = os.Stdout
-	stderr  = os.Stderr
-	stdin   = os.Stdin
-	color   = Blue
-	failed  = Red
-)
+// Run invokes the CLI with the given arguments. The first argument is always
+// the name of the application. This method slices accordingly.
+func (cli *CLI) Run(args []string) int {
+	var version, list bool
 
-func (c *CLI) Run(args []string) int {
-	var list bool
 	flags := flag.NewFlagSet("gch", flag.ContinueOnError)
-	flags.SetOutput(c.errStream)
+	flags.SetOutput(cli.errStream)
 	flags.Usage = func() {
-		fmt.Fprint(c.errStream, helpText)
+		fmt.Fprint(cli.errStream, helpText)
 	}
+
+	flags.BoolVar(&version, "version", false, "")
 	flags.BoolVar(&list, "list", false, "")
 	flags.BoolVar(&list, "l", false, "")
 
-	if err := flags.Parse(args); err != nil {
+	// Parse all the flags
+	if err := flags.Parse(args[1:]); err != nil {
 		return ExitCodeErrorParseFlag
 	}
+
+	// Version
+	if version {
+		fmt.Fprintf(cli.errStream, "%s v%s\n", Name, Version)
+		return ExitCodeOK
+	}
+
+	var (
+		command = []string{"git", "status", "--short"}
+		color   = Blue
+		failed  = Red
+	)
 
 	cpu := runtime.NumCPU()
 	runtime.GOMAXPROCS(cpu)
 
 	targets := []Target{}
+
+	// Check if $GOPATH is set
+	if os.Getenv("GOPATH") == "" {
+		printColor(cli.outStream, failed, "$GOPATH not set")
+		return ExitCodeErrorGopathNotSet
+	}
 
 	// Add $GOPATH into target if exist
 	for _, line := range filepath.SplitList(os.Getenv("GOPATH")) {
@@ -96,16 +114,16 @@ func (c *CLI) Run(args []string) int {
 			blank, err := checkIfCmdReturnBlank(command, repo)
 
 			if err != nil {
-				printColor(c.outStream, failed, err.Error())
+				printColor(cli.outStream, failed, err.Error())
 				return ExitCodeErrorBlank
 			}
 			if !blank {
-				printColor(c.outStream, color, repo)
+				printColor(cli.outStream, color, repo)
 				if list {
 					continue
 				}
 				if err := runCommand(command, color, repo); err != nil {
-					printColor(c.errStream, failed, err.Error())
+					printColor(cli.errStream, failed, err.Error())
 					return ExitCodeErrorRunCommand
 				}
 			}
@@ -119,6 +137,7 @@ var helpText = `Usage: gch [options]
   gch is a tool to run "git status" in every $GOPATHs recursively.
 
 Options:
---list, -l    View only directory path in $GOPATHs
-              without running git status.
+  --list, -l     View only directory path in $GOPATHs
+                 without running git status.
+  --version      Print the version of this application
 `
