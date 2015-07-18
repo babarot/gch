@@ -1,4 +1,4 @@
-# gch - (git) Check Changes
+![](https://raw.githubusercontent.com/b4b4r07/screenshots/master/gch/logo.png)
 
 List the changes that are applied to the repository in the `$GOPATH/src` directory.
 
@@ -12,7 +12,7 @@ List the changes that are applied to the repository in the `$GOPATH/src` directo
 
 ***DEMO:***
 
-![demo](gch.png)
+![](https://raw.githubusercontent.com/b4b4r07/screenshots/master/gch/demo.png)
 
 ## Requirements
 
@@ -73,8 +73,4 @@ or
 
 ## License
 
-[MIT](https://raw.githubusercontent.com/b4b4r07/dotfiles/master/doc/LICENSE-MIT.txt)
-
-## Author
-
-[BABAROT](http://tellme.tokyo) a.k.a. b4b4r07
+[MIT](https://raw.githubusercontent.com/b4b4r07/dotfiles/master/doc/LICENSE-MIT.txt) © BABAROT (a.k.a. b4b4r07)
