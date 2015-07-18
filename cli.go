@@ -22,6 +22,12 @@ const (
 	ExitCodeErrorGopathNotSet
 )
 
+var (
+	command = []string{"git", "status", "--short"}
+	color   = Blue
+	failed  = Red
+)
+
 // CLI is the command line object
 type CLI struct {
 	// outStream and errStream are the standard out and standard error streams to
@@ -59,12 +65,6 @@ func (cli *CLI) Run(args []string) int {
 		fmt.Fprintf(cli.errStream, "%s v%s\n", Name, Version)
 		return ExitCodeOK
 	}
-
-	var (
-		command = []string{"git", "status", "--short"}
-		color   = Blue
-		failed  = Red
-	)
 
 	cpu := runtime.NumCPU()
 	runtime.GOMAXPROCS(cpu)
